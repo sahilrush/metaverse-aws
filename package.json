@@ -1,0 +1,22 @@
+{
+  "name": "metaverse",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "start:backend": "cd apps/backend && pnpm start",
+    "prisma:generate": "cd packages/db && pnpm dlx prisma generate",
+    "start:frontend": "cd apps/frontend && pnpm build && pnpm preview "
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "turbo": "^2.2.3",
+    "typescript": "5.5.4"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@8.0.0"
+}
