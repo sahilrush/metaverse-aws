@@ -9,6 +9,7 @@ RUN set -ex; \
     openssl
 
 RUN node -v
+
 # Install pnpm
 RUN npm install -g pnpm
 
@@ -18,16 +19,16 @@ SHELL ["/bin/bash", "-c"]
 # Set working directory
 WORKDIR /app
 
-# Copy necessary files for the build
+# Copy workspace files
 COPY package*.json ./
 COPY turbo.json ./
 COPY pnpm-workspace.yaml ./
 COPY packages/db/package.json ./packages/db/
 COPY packages/db/prisma ./packages/db/prisma
 COPY packages/db/src ./packages/db/src
-COPY apps/backend/package.json ./apps/backend/
-COPY apps/backend/src ./apps/backend/src
-COPY apps/backend/tsconfig.json ./apps/backend/
+COPY apps/ws-server/package.json ./apps/ws-server/
+COPY apps/ws-server/tsconfig.json ./apps/ws-server/
+COPY apps/ws-server/src ./apps/ws-server/src/
 
 # Install dependencies using pnpm
 RUN pnpm install
@@ -39,10 +40,9 @@ RUN sed -i '/generator client {/a \  binaryTargets = ["native", "linux-musl-arm6
 RUN cd packages/db && npx prisma@5.21.1 generate
 
 # Build the backend app
-RUN cd apps/backend && pnpm build
+RUN cd apps/ws-server && pnpm build
 
 FROM node:20-alpine AS runner
-
 
 RUN set -ex; \
     apk update; \
@@ -52,21 +52,17 @@ RUN set -ex; \
 # Set working directory for the runner
 WORKDIR /app
 
-# Copy files from the builder stage to the runner stage
+# Copy necessary files for runtime
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/apps/backend/package.json ./apps/backend/
+COPY --from=builder /app/apps/ws-server/package.json ./apps/ws-server/
 COPY --from=builder /app/packages/db/package.json ./packages/db/
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /app/apps/ws-server/dist ./apps/ws-server/dist
 COPY --from=builder /app/packages/db/src ./packages/db/src
 COPY --from=builder /app/node_modules ./node_modules
 
-# Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3001
+EXPOSE 3001
 
-# Expose port 3000
-EXPOSE 3000
-
-# Set working directory and start the application
-WORKDIR /app/apps/backend
+WORKDIR /app/apps/ws-server
 CMD ["node", "dist/index.js"]
